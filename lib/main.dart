@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pmobile_harianku/component/navigation/harianku_bottom_navigation_bar.dart';
+import 'package:pmobile_harianku/component/navigation/navigation.dart';
 
 void main() {
   runApp(const MyApp());
