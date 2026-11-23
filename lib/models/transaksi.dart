@@ -40,4 +40,23 @@ class Transaksi {
       catatan: map['catatan'] as String?,
     );
   }
+
+  // Buat salinan Transaksi dengan sebagian field diganti (dipakai saat edit)
+  Transaksi copyWith({
+    String? id,
+    TipeTransaksi? tipe,
+    double? nominal,
+    String? kategori,
+    DateTime? tanggal,
+    String? catatan,
+  }) {
+    return Transaksi(
+      id: id ?? this.id,
+      tipe: tipe ?? this.tipe,
+      nominal: nominal ?? this.nominal,
+      kategori: kategori ?? this.kategori,
+      tanggal: tanggal ?? this.tanggal,
+      catatan: catatan ?? this.catatan,
+    );
+  }
 }
