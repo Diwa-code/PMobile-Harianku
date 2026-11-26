@@ -1,22 +1,25 @@
-import '../models/transaksi.dart';
+import '../models/transaction_model.dart';
 
 class CashflowService {
-  // Total semua transaksi bertipe pemasukan
-  static double totalPemasukan(List<Transaksi> daftar) {
+  static const String tipePemasukan = 'income';
+  static const String tipePengeluaran = 'expense';
+
+  // Total semua transaksi bertipe income
+  static double totalPemasukan(List<TransactionModel> daftar) {
     return daftar
-        .where((t) => t.tipe == TipeTransaksi.pemasukan)
-        .fold(0.0, (jumlah, t) => jumlah + t.nominal);
+        .where((t) => t.type == tipePemasukan)
+        .fold(0.0, (jumlah, t) => jumlah + t.amount);
   }
 
-  // Total semua transaksi bertipe pengeluaran
-  static double totalPengeluaran(List<Transaksi> daftar) {
+  // Total semua transaksi bertipe expense
+  static double totalPengeluaran(List<TransactionModel> daftar) {
     return daftar
-        .where((t) => t.tipe == TipeTransaksi.pengeluaran)
-        .fold(0.0, (jumlah, t) => jumlah + t.nominal);
+        .where((t) => t.type == tipePengeluaran)
+        .fold(0.0, (jumlah, t) => jumlah + t.amount);
   }
 
   // Saldo = pemasukan - pengeluaran
-  static double saldo(List<Transaksi> daftar) {
+  static double saldo(List<TransactionModel> daftar) {
     return totalPemasukan(daftar) - totalPengeluaran(daftar);
   }
 }
