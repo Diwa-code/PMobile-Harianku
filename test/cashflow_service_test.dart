@@ -57,6 +57,8 @@ void main() {
       buat('d', 'expense', 40000, tanggal: DateTime(2026, 11, 22)),
       buat('e', 'expense', 50000, tanggal: DateTime(2026, 11, 30)),
       buat('f', 'expense', 60000, tanggal: DateTime(2026, 10, 25)),
+      buat('g', 'expense', 70000, tanggal: DateTime(2026, 1, 5)),
+      buat('h', 'expense', 80000, tanggal: DateTime(2025, 12, 31)),
     ];
 
     List<String> idHasil(PeriodeCashflow p) => CashflowService
@@ -64,16 +66,19 @@ void main() {
         .map((t) => t.id)
         .toList();
 
-    test('harian hanya mengambil transaksi di hari yang sama', () {
-      expect(idHasil(PeriodeCashflow.harian), ['a', 'b']);
-    });
-
     test('mingguan mengambil Senin sampai Minggu', () {
       expect(idHasil(PeriodeCashflow.mingguan), ['a', 'b', 'c']);
     });
 
     test('bulanan mengambil seluruh transaksi di bulan yang sama', () {
       expect(idHasil(PeriodeCashflow.bulanan), ['a', 'b', 'c', 'd', 'e']);
+    });
+
+    test('tahunan mengambil seluruh transaksi di tahun yang sama', () {
+      expect(
+        idHasil(PeriodeCashflow.tahunan),
+        ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+      );
     });
 
     test('saldo dihitung dari hasil filter', () {
@@ -99,6 +104,80 @@ void main() {
       expect(
         CashflowService.filterPeriode([rusak], PeriodeCashflow.bulanan, acuan),
         isEmpty,
+      );
+    });
+  });
+
+  group('rentangPeriode', () {
+    test('mingguan dimulai Senin dan berakhir sebelum Senin berikutnya', () {
+      // Minggu, 29 November 2026 masih satu minggu dengan Senin 23 November
+      final (awal, akhir) = CashflowService.rentangPeriode(
+        PeriodeCashflow.mingguan,
+        DateTime(2026, 11, 29),
+      );
+      expect(awal, DateTime(2026, 11, 23));
+      expect(akhir, DateTime(2026, 11, 30));
+    });
+
+    test('bulanan Desember berakhir pada 1 Januari tahun berikutnya', () {
+      final (awal, akhir) = CashflowService.rentangPeriode(
+        PeriodeCashflow.bulanan,
+        DateTime(2026, 12, 15),
+      );
+      expect(awal, DateTime(2026, 12, 1));
+      expect(akhir, DateTime(2027, 1, 1));
+    });
+
+    test('tahunan dari 1 Januari sampai 1 Januari berikutnya', () {
+      final (awal, akhir) = CashflowService.rentangPeriode(
+        PeriodeCashflow.tahunan,
+        DateTime(2026, 6, 10),
+      );
+      expect(awal, DateTime(2026, 1, 1));
+      expect(akhir, DateTime(2027, 1, 1));
+    });
+  });
+
+  group('geserPeriode', () {
+    test('mingguan maju dan mundur 7 hari', () {
+      final acuan = DateTime(2026, 11, 26);
+      expect(
+        CashflowService.geserPeriode(PeriodeCashflow.mingguan, acuan, 1),
+        DateTime(2026, 12, 3),
+      );
+      expect(
+        CashflowService.geserPeriode(PeriodeCashflow.mingguan, acuan, -1),
+        DateTime(2026, 11, 19),
+      );
+    });
+
+    test('bulanan selalu mendarat di tanggal 1', () {
+      expect(
+        CashflowService.geserPeriode(
+          PeriodeCashflow.bulanan,
+          DateTime(2026, 1, 31),
+          1,
+        ),
+        DateTime(2026, 2, 1),
+      );
+      expect(
+        CashflowService.geserPeriode(
+          PeriodeCashflow.bulanan,
+          DateTime(2026, 1, 15),
+          -1,
+        ),
+        DateTime(2025, 12, 1),
+      );
+    });
+
+    test('tahunan maju satu tahun', () {
+      expect(
+        CashflowService.geserPeriode(
+          PeriodeCashflow.tahunan,
+          DateTime(2026, 6, 10),
+          1,
+        ),
+        DateTime(2027, 1, 1),
       );
     });
   });
