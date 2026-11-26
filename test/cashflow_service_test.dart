@@ -2,17 +2,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pmobile_harianku/models/transaction_model.dart';
 import 'package:pmobile_harianku/services/cashflow_service.dart';
 
-TransactionModel buat(String id, String type, double amount) {
-  final tanggal = DateTime(2026, 11, 20).toIso8601String();
+TransactionModel buat(
+  String id,
+  String type,
+  double amount, {
+  DateTime? tanggal,
+}) {
+  final iso = (tanggal ?? DateTime(2026, 11, 20)).toIso8601String();
   return TransactionModel(
     id: id,
     title: 'Tes $id',
     amount: amount,
     type: type,
     categoryId: 'cat_tes',
-    date: tanggal,
+    date: iso,
     source: 'manual',
-    createdAt: tanggal,
+    createdAt: iso,
   );
 }
 
@@ -39,5 +44,62 @@ void main() {
   test('tipe selain income dan expense diabaikan', () {
     final lain = [buat('x1', 'transfer', 500000)];
     expect(CashflowService.saldo(lain), 0);
+  });
+
+  group('filterPeriode', () {
+    // Acuan: Kamis, 26 November 2026 (minggu itu: Senin 23 sampai Minggu 29)
+    final acuan = DateTime(2026, 11, 26);
+
+    final tanggalan = [
+      buat('a', 'income', 100000, tanggal: DateTime(2026, 11, 26, 8, 0)),
+      buat('b', 'expense', 20000, tanggal: DateTime(2026, 11, 26, 23, 59)),
+      buat('c', 'expense', 30000, tanggal: DateTime(2026, 11, 24)),
+      buat('d', 'expense', 40000, tanggal: DateTime(2026, 11, 22)),
+      buat('e', 'expense', 50000, tanggal: DateTime(2026, 11, 30)),
+      buat('f', 'expense', 60000, tanggal: DateTime(2026, 10, 25)),
+    ];
+
+    List<String> idHasil(PeriodeCashflow p) => CashflowService
+        .filterPeriode(tanggalan, p, acuan)
+        .map((t) => t.id)
+        .toList();
+
+    test('harian hanya mengambil transaksi di hari yang sama', () {
+      expect(idHasil(PeriodeCashflow.harian), ['a', 'b']);
+    });
+
+    test('mingguan mengambil Senin sampai Minggu', () {
+      expect(idHasil(PeriodeCashflow.mingguan), ['a', 'b', 'c']);
+    });
+
+    test('bulanan mengambil seluruh transaksi di bulan yang sama', () {
+      expect(idHasil(PeriodeCashflow.bulanan), ['a', 'b', 'c', 'd', 'e']);
+    });
+
+    test('saldo dihitung dari hasil filter', () {
+      final bulanIni = CashflowService.filterPeriode(
+        tanggalan,
+        PeriodeCashflow.bulanan,
+        acuan,
+      );
+      expect(CashflowService.saldo(bulanIni), -40000);
+    });
+
+    test('tanggal yang tidak valid diabaikan', () {
+      final rusak = TransactionModel(
+        id: 'z',
+        title: 'rusak',
+        amount: 1000,
+        type: 'income',
+        categoryId: 'cat_tes',
+        date: 'bukan-tanggal',
+        source: 'manual',
+        createdAt: 'bukan-tanggal',
+      );
+      expect(
+        CashflowService.filterPeriode([rusak], PeriodeCashflow.bulanan, acuan),
+        isEmpty,
+      );
+    });
   });
 }
